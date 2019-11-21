@@ -1,0 +1,34 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2016 dtech(.hu)
+START=99
+STOP=20
+
+lcd_config() {
+	config_get_bool enabled $1 enabled
+	config_get device $1 device
+	config_get address $1 address
+	config_get sensorid $1 sensorid
+	config_get_bool blacklight $1 blacklight
+	config_get_bool autoretry $1 autoretry
+	config_get_bool nosensor $1 nosensor
+	config_get_bool reverse $1 reverse
+}
+
+start() {
+	killall -9 lcdclock 2> /dev/null
+
+	config_load lcdclock
+	config_foreach lcd_config display
+
+	[ "$sensorid" != "" ] && local extopts="-s $sensorid"
+	[ "$blacklight" -gt 0 ] && local extopts="$extopts -b"
+	[ "$autoretry" -gt 0 ] && local extopts="$extopts -r"
+	[ "$nosensor" -gt 0 ] && local extopts="$extopts -n"
+	[ "$reverse" -gt 0 ] && local extopts="$extopts -p"
+	[ "$enabled" -gt 0 ] && /usr/sbin/lcdclock -d $device -a $address $extopts &
+}
+
+stop() {
+	killall -9 lcdclock 2> /dev/null
+	echo LCD Clock stopped.
+}
